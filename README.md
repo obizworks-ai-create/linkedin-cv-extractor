@@ -7,7 +7,7 @@ sdk: static
 pinned: false
 ---
 
-# AI Hiring Agent
+# AI Hiring agent
 
 This repository contains the AI Hiring Agent.
 - **/frontend**: React dashboard (Static SDK)
