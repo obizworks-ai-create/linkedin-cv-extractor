@@ -22,6 +22,10 @@ else:
 
 app = FastAPI(title="AI Hiring Agent API")
 
+@app.get("/")
+def root():
+    return {"status": "online", "message": "AI Hiring Agent API is operational", "docs": "/docs"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
