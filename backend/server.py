@@ -17,8 +17,10 @@ load_dotenv(dotenv_path=_env_path, override=True)
 
 if not os.getenv("CEREBRAS_API_KEY"):
     print("⚠️  WARNING: CEREBRAS_API_KEY not found — AI analysis will fail!")
+if not os.getenv("APIFY_API_TOKEN"):
+    print("⚠️  WARNING: APIFY_API_TOKEN not found — Sourcing & Outreach will fail!")
 else:
-    print("✅ CEREBRAS_API_KEY loaded successfully.")
+    print("✅ CEREBRAS_API_KEY & APIFY_API_TOKEN loaded successfully.")
 
 app = FastAPI(title="AI Hiring Agent API")
 
@@ -86,15 +88,15 @@ async def startup_event():
                     new_ids = []
                     
                     for thread in threads:
-                        thread_id = thread.get('threadId') or thread.get('profileUrl')
-                        last_msg = thread.get('lastMessage', {})
-                        msg_id = last_msg.get('id') or f"{thread_id}_{last_msg.get('timestamp')}"
+                        # Apify Unread Messages Scraper keys
+                        thread_url = thread.get('threadUrl') or thread.get('profileUrl')
+                        snippet = thread.get('text') or 'No text'
+                        sender = thread.get('from') or 'A candidate'
+                        msg_id = thread.get('id') or f"{thread_url}_{sender}"
                         
-                        if not last_msg.get('fromMe') and msg_id not in seen_ids:
-                            name = thread.get('fullName', 'A candidate')
-                            snippet = last_msg.get('text', 'No text')
-                            print(f"🚨 New reply from {name}! Sending WhatsApp notification...")
-                            notification_manager.notify_new_reply(name, snippet)
+                        if msg_id not in seen_ids:
+                            print(f"🚨 New reply from {sender}! Sending WhatsApp notification...")
+                            notification_manager.notify_new_reply(sender, snippet)
                             seen_ids.add(msg_id)
                             new_ids.append(msg_id)
                     
@@ -287,6 +289,7 @@ def generate_message(candidate_id: str, role: str):
     except Exception as e:
         return {"message": f"Hi, I saw your profile for the {role} role and would love to chat!"}
 
+@app.get("/check-replies")
 @app.post("/check-replies")
 def check_replies():
     """Manual trigger to check for LinkedIn replies and send WhatsApp alerts."""

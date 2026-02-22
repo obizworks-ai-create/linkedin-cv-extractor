@@ -67,9 +67,6 @@ def stage_source(args):
 
     except Exception as e:
         error_msg = str(e)
-        if "parallel executions" in error_msg.lower():
-            error_msg = "PhantomBuster Error: Maximum parallel executions reached. Please wait a few minutes and try again."
-        
         print(f"❌ Sourcing Failed: {error_msg}")
         write_status("error", f"Sourcing Failed: {error_msg}")
 
