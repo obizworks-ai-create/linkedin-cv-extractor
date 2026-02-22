@@ -1,0 +1,21 @@
+{
+  "category": "People",
+  "connectionDegreesToScrape": [
+    "2",
+    "3+"
+  ],
+  "numberOfLinesPerLaunch": 10,
+  "numberOfResultsPerLaunch": 1000,
+  "numberOfResultsPerSearch": 1000,
+  "searchType": "linkedInSearchUrl",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+  "enrichLeadsWithAdditionalInformation": true,
+  "linkedInSearchUrl": "https://www.linkedin.com/search/results/people/?keywords=ai%20developer&origin=SWITCH_SEARCH_VERTICAL&sid=b1n",
+  "identities": [
+    {
+      "identityId": "4215168809923537",
+      "sessionCookie": "AQEDAWSLSr0AI9UtAAABnHaUAncAAAGcmqCGd00ANoK8_CQY4HfCKN3DFGy3r6YPX-ZDHoEyxXFY1wNw97dqIA0VaOVgFDZxRXuWSBsCKL9ndPLexNXsyzfiZocmgYkdnBfW1Y_NAHW47jNhrxWVFunA",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    }
+  ]
+}

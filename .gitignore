@@ -1,0 +1,24 @@
+# Environment variables
+.env
+backend/.env
+
+# Dependencies
+node_modules/
+backend/.venv/
+backend/__pycache__/
+frontend/node_modules/
+frontend/dist/
+
+# Local Data / Logs
+backend/*.json
+backend/*.log
+backend/*.txt
+!backend/requirements.txt
+!backend/vercel.json
+!backend/agent_args.json
+!backend/agent_config.json
+
+# IDE
+.vscode/
+.idea/
+.gemini/
