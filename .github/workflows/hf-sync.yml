@@ -1,0 +1,28 @@
+name: Sync to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+  # to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git remote add space https://huggingface.co/spaces/obizworks/linkedin-cv-extractor
+          
+          # Force push the backend directory to the huggingface repository root
+          git subtree split --prefix backend -b hf-deploy
+          git push -f https://obizworks:$HF_TOKEN@huggingface.co/spaces/obizworks/linkedin-cv-extractor hf-deploy:main
