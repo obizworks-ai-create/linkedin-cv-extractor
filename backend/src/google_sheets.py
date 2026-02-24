@@ -14,7 +14,7 @@ Setup:
 
 import os
 import json
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
 try:

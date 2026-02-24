@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import List, Optional
 from apify_client import ApifyClient
 from .models import CandidateProfile

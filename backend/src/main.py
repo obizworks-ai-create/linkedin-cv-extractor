@@ -24,8 +24,8 @@ from .google_sheets import GoogleSheetsExporter
 def write_status(stage: str, message: str):
     """Write pipeline status to a JSON file for frontend polling."""
     import datetime
-    from datetime import UTC
-    status = {"stage": stage, "message": message, "timestamp": datetime.datetime.now(UTC).isoformat()}
+    from datetime import timezone
+    status = {"stage": stage, "message": message, "timestamp": datetime.datetime.now(timezone.utc).isoformat()}
     with open("pipeline_status.json", "w", encoding="utf-8") as f:
         json.dump(status, f, indent=2)
 
