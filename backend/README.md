@@ -1,3 +1,11 @@
+---
+title: AI Hiring Agent
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
 # AI Hiring Intelligence Agent
 
 An automated candidate ranking system that uses Google X-Ray Search for sourcing and LLM-based reasoning for candidate evaluation.

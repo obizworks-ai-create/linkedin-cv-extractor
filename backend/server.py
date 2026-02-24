@@ -40,14 +40,6 @@ class SourcingRequest(BaseModel):
     location: str = "United States"
     search_depth: int = 10
 
-class RankingRequest(BaseModel):
-    role: str
-    persona: str
-
-class DeepScrapeRequest(BaseModel):
-    role: str
-    persona: str
-
 class AnalyzeRequest(BaseModel):
     role: str
     persona: str
@@ -65,56 +57,53 @@ async def startup_event():
     print("\n" + "="*50)
     print("🚀 TALENT SCOUT BACKEND STARTING")
     
-    # Start background polling for LinkedIn replies (Skip if on Vercel/Serverless)
-    if not os.getenv("VERCEL"):
-        import threading
-        import time
+    # Start background polling for LinkedIn replies
+    import threading
+    import time
+    
+    def poll_replies_worker():
+        print("🕒 Background Polling Started: Checking for replies every 10 mins...")
+        seen_replies_path = Path("seen_replies.json")
         
-        def poll_replies_worker():
-            print("🕒 Background Polling Started: Checking for replies every 10 mins...")
-            seen_replies_path = Path("seen_replies.json")
-            
-            while True:
-                try:
-                    # 1. Load seen IDs
-                    seen_ids = set()
-                    if seen_replies_path.exists():
-                        with open(seen_replies_path, "r") as f:
-                            seen_ids = set(json.load(f))
-                    
-                    # 2. Check for replies
-                    print("🔍 Background check for new LinkedIn replies...")
-                    threads = sourcing_engine.check_replies()
-                    new_ids = []
-                    
-                    for thread in threads:
-                        # Apify Unread Messages Scraper keys
-                        thread_url = thread.get('threadUrl') or thread.get('profileUrl')
-                        snippet = thread.get('text') or 'No text'
-                        sender = thread.get('from') or 'A candidate'
-                        msg_id = thread.get('id') or f"{thread_url}_{sender}"
-                        
-                        if msg_id not in seen_ids:
-                            print(f"🚨 New reply from {sender}! Sending WhatsApp notification...")
-                            notification_manager.notify_new_reply(sender, snippet)
-                            seen_ids.add(msg_id)
-                            new_ids.append(msg_id)
-                    
-                    # 3. Save seen IDs
-                    if new_ids:
-                        with open(seen_replies_path, "w") as f:
-                            json.dump(list(seen_ids), f)
-                            
-                except Exception as e:
-                    print(f"⚠️ Polling Error: {e}")
+        while True:
+            try:
+                # 1. Load seen IDs
+                seen_ids = set()
+                if seen_replies_path.exists():
+                    with open(seen_replies_path, "r") as f:
+                        seen_ids = set(json.load(f))
                 
-                # Wait 10 minutes (600 seconds)
-                time.sleep(600)
+                # 2. Check for replies
+                print("🔍 Background check for new LinkedIn replies...")
+                threads = sourcing_engine.check_replies()
+                new_ids = []
+                
+                for thread in threads:
+                    # Apify Unread Messages Scraper keys
+                    thread_url = thread.get('threadUrl') or thread.get('profileUrl')
+                    snippet = thread.get('text') or 'No text'
+                    sender = thread.get('from') or 'A candidate'
+                    msg_id = thread.get('id') or f"{thread_url}_{sender}"
+                    
+                    if msg_id not in seen_ids:
+                        print(f"🚨 New reply from {sender}! Sending WhatsApp notification...")
+                        notification_manager.notify_new_reply(sender, snippet)
+                        seen_ids.add(msg_id)
+                        new_ids.append(msg_id)
+                
+                # 3. Save seen IDs
+                if new_ids:
+                    with open(seen_replies_path, "w") as f:
+                        json.dump(list(seen_ids), f)
+                        
+            except Exception as e:
+                print(f"⚠️ Polling Error: {e}")
+            
+            # Wait 10 minutes (600 seconds)
+            time.sleep(600)
 
-        polling_thread = threading.Thread(target=poll_replies_worker, daemon=True)
-        polling_thread.start()
-    else:
-        print("☁️ Running on Vercel: Background polling thread disabled. Use /check-replies for manual or cron triggers.")
+    polling_thread = threading.Thread(target=poll_replies_worker, daemon=True)
+    polling_thread.start()
 
     if os.getenv("CEREBRAS_API_KEY"):
         print("✅ CEREBRAS API KEY: LOADED")
@@ -143,9 +132,7 @@ def _run_stage(stage: str, role: str, location: str = "United States", search_de
     # IMMEDIATE STATUS RESET: Prevent frontend from seeing old results
     status_map = {
         "source": ("sourcing", f"Initializing search for '{role}'..."),
-        "rank": ("ranking", "Initializing AI Ranking..."),
-        "deep-scrape": ("deep_scraping", "Initializing Deep Scrape..."),
-        "analyze": ("analyzing", "Initializing Final Analysis...")
+        "analyze": ("analyzing", "Initializing Analysis...")
     }
     s_stage, s_msg = status_map.get(stage, (stage, f"Starting {stage}..."))
     write_status(s_stage, s_msg)
@@ -178,38 +165,14 @@ def start_sourcing(req: SourcingRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ─── STAGE 2: RANK ──────────────────────────────────────────────────
-@app.post("/start-ranking")
-def start_ranking(req: RankingRequest):
+# ─── STAGE 2: AI ANALYZE (Final AI assessment) ──────────────────────
+@app.post("/start-analyze")
+def start_analyze(req: AnalyzeRequest):
     if not os.path.exists("sourced_candidates.json"):
         raise HTTPException(status_code=400, detail="No sourced candidates. Run Sourcing first.")
     try:
-        _run_stage("rank", req.role, persona_text=req.persona)
-        return {"status": "started", "message": "AI is ranking candidates against your persona..."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ─── STAGE 3: DEEP PROFILE SEARCH (PhantomBuster only) ──────────────
-@app.post("/start-deep-scrape")
-def start_deep_scrape(req: DeepScrapeRequest):
-    if not os.path.exists("ranked_candidates.json"):
-        raise HTTPException(status_code=400, detail="No ranked candidates. Run AI Ranking first.")
-    try:
-        _run_stage("deep-scrape", req.role, persona_text=req.persona)
-        return {"status": "started", "message": "Deep scraping top candidate profiles..."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ─── STAGE 4: AI ANALYZE (Final AI assessment) ──────────────────────
-@app.post("/start-analyze")
-def start_analyze(req: AnalyzeRequest):
-    if not os.path.exists("deep_scraped_candidates.json"):
-        raise HTTPException(status_code=400, detail="No deep-scraped candidates. Run Deep Profile Search first.")
-    try:
         _run_stage("analyze", req.role, persona_text=req.persona)
-        return {"status": "started", "message": "Running final AI assessment on deep-scraped profiles..."}
+        return {"status": "started", "message": "Running AI assessment on sourced profiles..."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -221,20 +184,6 @@ def get_sourced():
         return {"sourced": []}
     with open("sourced_candidates.json", "r", encoding="utf-8") as f:
         return {"sourced": json.load(f)}
-
-@app.get("/ranked")
-def get_ranked():
-    if not os.path.exists("ranked_candidates.json"):
-        return {"ranked": []}
-    with open("ranked_candidates.json", "r", encoding="utf-8") as f:
-        return {"ranked": json.load(f)}
-
-@app.get("/deep-scraped")
-def get_deep_scraped():
-    if not os.path.exists("deep_scraped_candidates.json"):
-        return {"deep_scraped": []}
-    with open("deep_scraped_candidates.json", "r", encoding="utf-8") as f:
-        return {"deep_scraped": json.load(f)}
 
 @app.get("/results")
 def get_results():

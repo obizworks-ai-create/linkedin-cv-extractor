@@ -29,7 +29,8 @@ export default function CandidateCard({ result }) {
         setStatus('Generating personalized message...')
         try {
             const role = localStorage.getItem('last_search_role') || 'Software Engineer'
-            const resp = await fetch(`http://localhost:8000/generate-message?candidate_id=${encodeURIComponent(result.candidate_id)}&role=${encodeURIComponent(role)}`)
+            const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const resp = await fetch(`${API}/generate-message?candidate_id=${encodeURIComponent(result.candidate_id)}&role=${encodeURIComponent(role)}`)
             const data = await resp.json()
             setMessageText(data.message)
             setStatus(null)
@@ -44,7 +45,8 @@ export default function CandidateCard({ result }) {
         setIsSending(true)
         setStatus('Launching Phantom...')
         try {
-            const resp = await fetch('http://localhost:8000/send-outreach', {
+            const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const resp = await fetch(`${API}/send-outreach`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: json.stringify({
